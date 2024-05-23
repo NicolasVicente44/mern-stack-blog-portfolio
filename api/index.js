@@ -29,19 +29,19 @@ mongoose
     console.log(err);
   });
 
-app.post("/register", async (req, res) => {
-  const { username, password } = req.body;
-  try {
-    const userDoc = await User.create({
-      username,
-      password: bcrypt.hashSync(password, salt),
-    });
-    res.json(userDoc);
-  } catch (e) {
-    console.log(e);
-    res.status(400).json(e);
-  }
-});
+// app.post("/register", async (req, res) => {
+//   const { username, password } = req.body;
+//   try {
+//     const userDoc = await User.create({
+//       username,
+//       password: bcrypt.hashSync(password, salt),
+//     });
+//     res.json(userDoc);
+//   } catch (e) {
+//     console.log(e);
+//     res.status(400).json(e);
+//   }
+// });
 
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
@@ -63,10 +63,15 @@ app.post("/login", async (req, res) => {
 
 app.get("/profile", (req, res) => {
   const { token } = req.cookies;
-  jwt.verify(token, secret, {}, (err, info) => {
-    if (err) throw err;
-    res.json(info);
-  });
+
+  try {
+    jwt.verify(token, secret, {}, (err, info) => {
+      if (err) throw err;
+      res.json(info);
+    });
+  } catch (e) {
+    console.log(e);
+  }
 });
 
 app.post("/logout", (req, res) => {
@@ -166,9 +171,15 @@ app.get("/post", async (req, res) => {
 });
 
 app.get("/post/:id", async (req, res) => {
-  const { id } = req.params;
-  const postDoc = await Post.findById(id).populate("author", ["username"]);
-  res.json(postDoc);
+  try {
+    const { id } = req.params;
+    const postDoc = await Post.findById(id).populate("author", ["username"]);
+    res.json(postDoc);
+  } catch (e) {
+    if (e) {
+      redirect("/");
+    }
+  }
 });
 
 app.listen(4000);

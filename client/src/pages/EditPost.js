@@ -11,14 +11,27 @@ export default function EditPost() {
   const [redirect, setRedirect] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:4000/post/" + id).then((response) => {
-      response.json().then((postInfo) => {
+    if (!id) {
+      return;
+    }
+
+    fetch(`http://localhost:4000/post/${id}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Post not found");
+        }
+        return response.json();
+      })
+      .then((postInfo) => {
         setTitle(postInfo.title);
         setContent(postInfo.content);
         setSummary(postInfo.summary);
+      })
+      .catch((error) => {
+        console.error("Error fetching post:", error);
+        setRedirect(true);
       });
-    });
-  }, [id]); // Include id in the dependency array
+  }, [id]);
 
   async function updatePost(ev) {
     ev.preventDefault();
@@ -54,8 +67,12 @@ export default function EditPost() {
     }
   }
 
+  if (!id) {
+    return null;
+  }
+
   if (redirect) {
-    return <Navigate to={"/post/" + id} />;
+    return <Navigate to="/" />; // Redirect to home page
   }
 
   return (

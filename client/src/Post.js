@@ -22,7 +22,9 @@ export default function Post({
           <h2>{title}</h2>
         </Link>
         <p className="info">
-          <a className="author">{author.username}</a>
+          <a className="author">
+            {author ? author.username : "Unknown Author"}
+          </a>
           <time>{formatISO9075(new Date(createdAt))}</time>
         </p>
         <p className="summary">{summary}</p>
