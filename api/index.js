@@ -1,24 +1,20 @@
 const express = require("express");
 const cors = require("cors");
-const { default: mongoose } = require("mongoose");
+const mongoose = require("mongoose");
 const User = require("./models/User");
-const app = express();
 const bcrypt = require("bcryptjs");
+const app = express();
 const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 
-require("dotenv").config();
 const salt = bcrypt.genSaltSync(10);
-const secret = "asdfadsf4w0543ew0fs[84354sdf8g0sd434#$$";
+const secret = "asdfe45we45w345wegw345werjktjwertkj";
+require("dotenv").config();
 
-// Configure CORS
-app.use(
-  cors({
-    origin: "http://localhost:3000", // Replace with the origin of your React app
-    credentials: true, // Allow the server to send cookies to the client
-  })
-);
-
+app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
 app.use(express.json());
+app.use(cookieParser());
+app.use("/uploads", express.static(__dirname + "/uploads"));
 
 mongoose
   .connect(process.env.MONGODB_URI)
@@ -36,33 +32,42 @@ app.post("/register", async (req, res) => {
       username,
       password: bcrypt.hashSync(password, salt),
     });
-    res.json(userDoc ? "User created successfully" : "User creation error");
-  } catch (error) {
-    res.status(400).json(error);
+    res.json(userDoc);
+  } catch (e) {
+    console.log(e);
+    res.status(400).json(e);
   }
 });
 
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
   const userDoc = await User.findOne({ username });
-
-  if (!userDoc) {
-    return res.status(400).json("Invalid username or password");
+  const passOk = bcrypt.compareSync(password, userDoc.password);
+  if (passOk) {
+    // logged in
+    jwt.sign({ username, id: userDoc._id }, secret, {}, (err, token) => {
+      if (err) throw err;
+      res.cookie("token", token).json({
+        id: userDoc._id,
+        username,
+      });
+    });
+  } else {
+    res.status(400).json("wrong credentials");
   }
+});
 
-  const validPassword = bcrypt.compareSync(password, userDoc.password);
-
-  if (!validPassword) {
-    return res.status(400).json("Invalid username or password");
-  }
-
-  // Logged in
-  jwt.sign({ username, id: userDoc._id }, secret, {}, (err, token) => {
+app.get("/profile", (req, res) => {
+  const { token } = req.cookies;
+  jwt.verify(token, secret, {}, (err, info) => {
     if (err) throw err;
-    res.json(token);
+    res.json(info);
   });
 });
-const port = 4000;
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+
+app.post("/logout", (req, res) => {
+  res.cookie("token", "").json("ok");
 });
+
+app.listen(4000);
+//

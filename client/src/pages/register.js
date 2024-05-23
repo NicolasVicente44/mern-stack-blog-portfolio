@@ -15,11 +15,14 @@ export default function RegisterPage() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        alert(`Registration failed`);
+      }
+      if (response.ok) {
+        alert(`Registration Successful`);
       }
 
       const data = await response.json();
-      console.log(data); // Handle response data as needed
+      console.log(data);
     } catch (err) {
       setError(err.message);
       console.error("Failed to register:", err);
